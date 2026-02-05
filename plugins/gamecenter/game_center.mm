@@ -88,8 +88,32 @@ Error GameCenter::authenticate() {
 	GKLocalPlayer *player = [GKLocalPlayer localPlayer];
 	ERR_FAIL_COND_V(![player respondsToSelector:@selector(authenticateHandler)], ERR_UNAVAILABLE);
 
-	UIViewController *root_controller = [[UIApplication sharedApplication] delegate].window.rootViewController;
-	ERR_FAIL_COND_V(!root_controller, FAILED);
+    UIViewController *root_controller = nil;
+
+    // iOS 13+ compatible method
+    if (@available(iOS 13.0, *)) {
+        NSArray *windows = [[UIApplication sharedApplication] windows];
+        for (UIWindow *window in windows) {
+            if (window.isKeyWindow) {
+                root_controller = window.rootViewController;
+                break;
+            }
+        }
+        // Fallback: use first window
+        if (!root_controller && windows.count > 0) {
+            root_controller = ((UIWindow*)windows[0]).rootViewController;
+        }
+    }
+
+    // iOS < 13 fallback
+    if (!root_controller) {
+        UIWindow *window = [[UIApplication sharedApplication] delegate].window;
+        if (window) {
+            root_controller = window.rootViewController;
+        }
+    }
+
+    ERR_FAIL_COND_V(!root_controller, FAILED);
 
 	// This handler is called several times.  First when the view needs to be shown, then again
 	// after the view is cancelled or the user logs in.  Or if the user's already logged in, it's
@@ -320,8 +344,32 @@ Error GameCenter::show_game_center(Dictionary p_params) {
 	GKGameCenterViewController *controller = [[GKGameCenterViewController alloc] init];
 	ERR_FAIL_COND_V(!controller, FAILED);
 
-	UIViewController *root_controller = [[UIApplication sharedApplication] delegate].window.rootViewController;
-	ERR_FAIL_COND_V(!root_controller, FAILED);
+    UIViewController *root_controller = nil;
+
+    // iOS 13+ compatible method
+    if (@available(iOS 13.0, *)) {
+        NSArray *windows = [[UIApplication sharedApplication] windows];
+        for (UIWindow *window in windows) {
+            if (window.isKeyWindow) {
+                root_controller = window.rootViewController;
+                break;
+            }
+        }
+        // Fallback: use first window
+        if (!root_controller && windows.count > 0) {
+            root_controller = ((UIWindow*)windows[0]).rootViewController;
+        }
+    }
+
+    // iOS < 13 fallback
+    if (!root_controller) {
+        UIWindow *window = [[UIApplication sharedApplication] delegate].window;
+        if (window) {
+            root_controller = window.rootViewController;
+        }
+    }
+
+    ERR_FAIL_COND_V(!root_controller, FAILED);
 
 	controller.gameCenterDelegate = gameCenterDelegate;
 	controller.viewState = view_state;
