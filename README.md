@@ -54,7 +54,7 @@ Once the actual compilation starts, you can stop this command by pressing <kbd>C
 - Run the command below to generate an `.a` static library for chosen target:
 
 ```bash
-scons target=<debug|release|release_debug> arch=<arch> simulator=<no|yes> plugin=<plugin_name> version=<3.x|4.0>
+scons target=<debug|release|release_debug> arch=<arch> simulator=<no|yes> plugin=<plugin_name> version=<3.x|4.x>
 ```
 
 **Note:** Godot's official `debug` export templates are compiled with the `release_debug` target, *not* the `debug` target.
