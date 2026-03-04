@@ -63,6 +63,26 @@ typedef PoolRealArray GodotFloatArray;
 GameCenter *GameCenter::instance = NULL;
 GodotGameCenterDelegate *gameCenterDelegate = nil;
 
+UIViewController *_get_root_view_controller() {
+	// iOS 13+ compatible method
+	if (@available(iOS 13.0, *)) {
+		for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
+			if (scene.activationState == UISceneActivationStateForegroundActive &&
+					[scene isKindOfClass:[UIWindowScene class]]) {
+				UIWindowScene *windowScene = (UIWindowScene *)scene;
+				for (UIWindow *window in windowScene.windows) {
+					if (window.isKeyWindow) {
+						return window.rootViewController;
+					}
+				}
+			}
+		}
+	}
+
+	// iOS < 13 fallback
+	return UIApplication.sharedApplication.delegate.window.rootViewController;
+}
+
 void GameCenter::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("authenticate"), &GameCenter::authenticate);
 	ClassDB::bind_method(D_METHOD("is_authenticated"), &GameCenter::is_authenticated);
@@ -80,7 +100,7 @@ void GameCenter::_bind_methods() {
 };
 
 Error GameCenter::authenticate() {
-	//if this class isn't available, game center isn't implemented
+	// if this class isn't available, game center isn't implemented
 	if ((NSClassFromString(@"GKLocalPlayer")) == nil) {
 		return ERR_UNAVAILABLE;
 	}
@@ -88,32 +108,8 @@ Error GameCenter::authenticate() {
 	GKLocalPlayer *player = [GKLocalPlayer localPlayer];
 	ERR_FAIL_COND_V(![player respondsToSelector:@selector(authenticateHandler)], ERR_UNAVAILABLE);
 
-    UIViewController *root_controller = nil;
-
-    // iOS 13+ compatible method
-    if (@available(iOS 13.0, *)) {
-        NSArray *windows = [[UIApplication sharedApplication] windows];
-        for (UIWindow *window in windows) {
-            if (window.isKeyWindow) {
-                root_controller = window.rootViewController;
-                break;
-            }
-        }
-        // Fallback: use first window
-        if (!root_controller && windows.count > 0) {
-            root_controller = ((UIWindow*)windows[0]).rootViewController;
-        }
-    }
-
-    // iOS < 13 fallback
-    if (!root_controller) {
-        UIWindow *window = [[UIApplication sharedApplication] delegate].window;
-        if (window) {
-            root_controller = window.rootViewController;
-        }
-    }
-
-    ERR_FAIL_COND_V(!root_controller, FAILED);
+	UIViewController *root_controller = _get_root_view_controller();
+	ERR_FAIL_COND_V(!root_controller, FAILED);
 
 	// This handler is called several times.  First when the view needs to be shown, then again
 	// after the view is cancelled or the user logs in.  Or if the user's already logged in, it's
@@ -124,6 +120,7 @@ Error GameCenter::authenticate() {
 	player.authenticateHandler = (^(UIViewController *controller, NSError *error) {
 		_strongify(root_controller);
 		_strongify(player);
+		NSLog(@"root controller: %@", root_controller);
 
 		if (controller) {
 			[root_controller presentViewController:controller animated:YES completion:nil];
@@ -344,32 +341,8 @@ Error GameCenter::show_game_center(Dictionary p_params) {
 	GKGameCenterViewController *controller = [[GKGameCenterViewController alloc] init];
 	ERR_FAIL_COND_V(!controller, FAILED);
 
-    UIViewController *root_controller = nil;
-
-    // iOS 13+ compatible method
-    if (@available(iOS 13.0, *)) {
-        NSArray *windows = [[UIApplication sharedApplication] windows];
-        for (UIWindow *window in windows) {
-            if (window.isKeyWindow) {
-                root_controller = window.rootViewController;
-                break;
-            }
-        }
-        // Fallback: use first window
-        if (!root_controller && windows.count > 0) {
-            root_controller = ((UIWindow*)windows[0]).rootViewController;
-        }
-    }
-
-    // iOS < 13 fallback
-    if (!root_controller) {
-        UIWindow *window = [[UIApplication sharedApplication] delegate].window;
-        if (window) {
-            root_controller = window.rootViewController;
-        }
-    }
-
-    ERR_FAIL_COND_V(!root_controller, FAILED);
+	UIViewController *root_controller = _get_root_view_controller();
+	ERR_FAIL_COND_V(!root_controller, FAILED);
 
 	controller.gameCenterDelegate = gameCenterDelegate;
 	controller.viewState = view_state;
