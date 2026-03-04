@@ -108,20 +108,15 @@ Error GameCenter::authenticate() {
 	GKLocalPlayer *player = [GKLocalPlayer localPlayer];
 	ERR_FAIL_COND_V(![player respondsToSelector:@selector(authenticateHandler)], ERR_UNAVAILABLE);
 
-	UIViewController *root_controller = _get_root_view_controller();
-	ERR_FAIL_COND_V(!root_controller, FAILED);
-
 	// This handler is called several times.  First when the view needs to be shown, then again
 	// after the view is cancelled or the user logs in.  Or if the user's already logged in, it's
 	// called just once to confirm they're authenticated.  This is why no result needs to be specified
 	// in the presentViewController phase. In this case, more calls to this function will follow.
-	_weakify(root_controller);
 	_weakify(player);
 	player.authenticateHandler = (^(UIViewController *controller, NSError *error) {
-		_strongify(root_controller);
 		_strongify(player);
-		NSLog(@"root controller: %@", root_controller);
 
+		UIViewController *root_controller = _get_root_view_controller();
 		if (controller) {
 			[root_controller presentViewController:controller animated:YES completion:nil];
 		} else {
